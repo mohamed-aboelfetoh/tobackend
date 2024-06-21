@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Scan Page</title>
+  <link rel="stylesheet" href="css/scannerCusumize.css">
+</head>
+<body>
+  <div class="container">
+      <h1>Upload Image and Get Prediction</h1>
+
+      <form id="image-form">
+        <input type="text" id="full-name" name="full_name" placeholder="Full Name">
+        <input type="file" id="image-input" name="file">
+        <input type="submit">
+      </form>
+      
+      <div class="data-container">
+        <div id="image-container" class="print-section printable"></div>
+        <div id="response" class="print-section printable"></div>
+      </div>
+      
+      <button id="print-button" class="print-button" style="display: none;">Print</button>
+  </div>
+
+  <script>
+    const form = document.getElementById('image-form');
+    const responseElement = document.getElementById('response');
+    const imageContainer = document.getElementById('image-container');
+    const printButton = document.getElementById('print-button');
+  
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const formData = new FormData();
+      const fileInput = document.getElementById('image-input');
+      const fullName = document.getElementById('full-name').value;
+  
+      formData.append('file', fileInput.files[0]);
+      formData.append('full_name', fullName);
+  
+      fetch('https://fastapi-lung-cancer.onrender.com/predict', {
+        method: 'POST',
+        body: formData,
+      })
+      .then(response => response.json())
+      .then(data => {
+        const prediction = data.prediction;
+        const now = new Date();
+        const date = now.toLocaleDateString();
+        const time = now.toLocaleTimeString();
+  
+        // Convert image file to base64 string
+        const reader = new FileReader();
+        reader.readAsDataURL(fileInput.files[0]);
+        reader.onload = () => {
+          const imageBase64 = reader.result; // Base64 string
+          
+          responseElement.innerHTML = `Prediction: ${prediction} <br> Date: ${date} <br> Time: ${time}`;
+          imageContainer.innerHTML = `
+            <p>Name: ${fullName}</p>
+            <br>
+            <div class="imageContent">
+                <p>Image:</p>
+                <img src="${imageBase64}" alt="Uploaded Image">
+            </div>
+          `;
+  
+          printButton.style.display = 'block';
+        };
+      })
+      .catch(error => console.error('Error:', error));
+    });
+  
+    printButton.addEventListener('click', () => {
+      window.print();
+    });
+  </script>
+</body>
+</html>
